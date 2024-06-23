@@ -9,8 +9,10 @@ const port = process.env.PORT || 5000;
 const corsOption = {
   origin: [
     'http://localhost:5173',
-    'https://assignment-11-50ae9.web.app',
-    'https://assignment-11-50ae9.firebaseapp.com'
+    'https://assignment-12-33727.web.app',
+    'https://assignment-12-robiul.netlify.app',
+    // 'https://assignment-11-50ae9.web.app',
+    // 'https://assignment-11-50ae9.firebaseapp.com'
   ],
   Credentials: true,
   optionSuccessStatus: 200,
@@ -50,6 +52,15 @@ async function run() {
       const result = await surveyCollection.insertOne(surveyData);
       res.send(result)
      })
+
+
+     app.get('/survey', async (req, res) =>{
+      const result = await surveyCollection.find().toArray()
+      res.send(result)
+     })
+
+    //  update durvey
+    
 
     
     // Send a ping to confirm a successful connection
