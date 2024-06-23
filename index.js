@@ -5,8 +5,19 @@ require('dotenv').config();
 const port = process.env.PORT || 5000;
 
 
+
+const corsOption = {
+  origin: [
+    'http://localhost:5173',
+    'https://assignment-11-50ae9.web.app',
+    'https://assignment-11-50ae9.firebaseapp.com'
+  ],
+  Credentials: true,
+  optionSuccessStatus: 200,
+}
+
 // middlewere
-app.use(cors());
+app.use(cors(corsOption));
 app.use(express.json());
 
 
@@ -27,9 +38,22 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
+
+
+     const surveyCollection = client.db("surveyApp").collection("allSurvey");
+
+
+     app.post('/createSurvey', async (req, res) =>{
+      const surveyData = req.body;
+      console.log(surveyData);
+      const result = await surveyCollection.insertOne(surveyData);
+      res.send(result)
+     })
+
+    
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
