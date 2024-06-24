@@ -43,29 +43,72 @@ async function run() {
     // await client.connect();
 
 
-     const surveyCollection = client.db("surveyApp").collection("allSurvey");
+    const surveyCollection = client.db("surveyApp").collection("allSurvey");
+    const userCollection = client.db("surveyApp").collection("users");
 
 
-     app.post('/createSurvey', async (req, res) =>{
+    // admin api
+    app.get('/allUsers', async (req, res) =>{
+      const result = await userCollection.find().toArray()
+      res.send(result);
+    })
+
+
+    app.put('/userRole/:id', async (req, res) =>{
+      const {id} = req.params
+      const updateRole = req.body;
+      console.log(id, updateRole.role);
+      const filter = {_id : new ObjectId(id)}
+
+      const updateDoc = {
+        $set: {
+          role : updateRole.role,
+        },
+      };
+
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result)
+    })
+    
+    
+    //  user related api
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email }
+      const existingUser = await userCollection.findOne(query)
+
+      
+      if (existingUser) {
+        console.log(existingUser);
+        return res.send({ message: 'user already exists', insertedId: null })
+      }
+      const result = await userCollection.insertOne(user);
+
+      res.send(result);
+
+    })
+
+
+    app.post('/createSurvey', async (req, res) => {
       const surveyData = req.body;
       console.log(surveyData);
       const result = await surveyCollection.insertOne(surveyData);
       res.send(result)
-     })
+    })
 
 
-     app.get('/survey', async (req, res) =>{
+    app.get('/survey', async (req, res) => {
       const result = await surveyCollection.find().toArray()
       res.send(result)
-     })
+    })
 
     //  update durvey
-    app.put('/updateSurvey/:id', async (req, res) =>{
+    app.put('/updateSurvey/:id', async (req, res) => {
       const id = req.params.id;
       const updatedSurvey = req.body
-      
+
       console.log(updatedSurvey, id);
-      const filter = {_id: new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
 
 
       const updateDoc = {
@@ -76,13 +119,13 @@ async function run() {
           deadline: updatedSurvey.deadline,
         },
       };
-      
-      const result =  await surveyCollection.updateOne(filter, updateDoc )
+
+      const result = await surveyCollection.updateOne(filter, updateDoc)
       res.send(result)
     })
-    
 
-    
+
+
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -95,11 +138,11 @@ run().catch(console.dir);
 
 
 
-app.get('/', (req, res) =>{
-    res.send('surver is running')
+app.get('/', (req, res) => {
+  res.send('surver is running')
 });
 
 
-app.listen(port, () =>{
-    console.log(`surver is running on port ${port}`)
+app.listen(port, () => {
+  console.log(`surver is running on port ${port}`)
 })
