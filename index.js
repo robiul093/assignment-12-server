@@ -26,6 +26,7 @@ app.use(express.json());
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const req = require('express/lib/request');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.3nuinge.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -89,6 +90,7 @@ async function run() {
     })
 
 
+    // survey related api
     app.post('/createSurvey', async (req, res) => {
       const surveyData = req.body;
       console.log(surveyData);
@@ -102,7 +104,7 @@ async function run() {
       res.send(result)
     })
 
-    //  update durvey
+    //  update survey
     app.put('/updateSurvey/:id', async (req, res) => {
       const id = req.params.id;
       const updatedSurvey = req.body
@@ -119,6 +121,35 @@ async function run() {
           deadline: updatedSurvey.deadline,
         },
       };
+
+      const result = await surveyCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+
+    app.put(`/surveyAnswer/:id`, async (req, res) =>{
+      const id = req.params.id;
+      const answer = req.body;
+      
+      const question1Ans = answer.question1Ans;
+      const question2Ans = answer.question2Ans;
+      const question3Ans = answer.question3Ans;
+      console.log(answer, id, question1Ans, question2Ans, question3Ans);
+
+      const filter = { _id: new ObjectId(id) };
+      
+      const updateDoc = {
+
+        $inc : {
+          'question.question_1.question1Ans.yes' : question1Ans === 'yes' ? 1 : 0,
+          'question.question_1.question1Ans.no' : question1Ans === 'no' ? 1 : 0,
+          'question.question_2.question2Ans.yes' : question2Ans === 'yes' ? 1 : 0,
+          'question.question_2.question2Ans.no' : question2Ans === 'no' ? 1 : 0,
+          'question.question_3.question3Ans.yes' : question3Ans === 'yes' ? 1 : 0,
+          'question.question_3.question3Ans.no' : question3Ans === 'no' ? 1 : 0,
+        }
+      }
+      
 
       const result = await surveyCollection.updateOne(filter, updateDoc)
       res.send(result)
