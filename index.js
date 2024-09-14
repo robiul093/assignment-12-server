@@ -61,7 +61,7 @@ async function run() {
       const { email } = req.params
       const updateRole = req.body;
       console.log(email, updateRole.role);
-      const filter = { email : email }
+      const filter = { email: email }
 
       const updateDoc = {
         $set: {
@@ -114,8 +114,7 @@ async function run() {
 
     app.get('/survey', async (req, res) => {
       const result = await surveyCollection.find().toArray()
-      console.log(process.env.STRIPE_SECRET_KEY);
-      
+
       res.send(result)
     })
 
@@ -172,13 +171,47 @@ async function run() {
       res.send(result)
     })
 
+    // report servay
+    app.put('/report/:id', async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      data.reprotDate = new Date();
+      console.log(id, data)
+
+      const filter = { _id: new ObjectId(id) }
+
+      const survey = await surveyCollection.findOne(filter, { projection: { reportedBy: 1 } })
+
+      if (!survey) {
+        return res.status(404).send({ message: "Survey not found." });
+      }
+
+      const reportedBy = survey.reportedBy || [];
+
+      const alreadyRepoted = reportedBy.some(report => report.email === data.email);
+
+      if (alreadyRepoted) {
+        return res.status(400).send({ message: "You have already reported this survey." });
+      }
+
+      const updateDoc = {
+
+        $inc: { 'report': 1, },
+        $push: { 'reportedBy': data, }
+
+      }
+
+      const result = await surveyCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
+
 
     // payment intent
-    app.post('/create-payment-intent', async(req, res) =>{
-      const {price} = req.body;
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
       const amount = parseInt(price * 100);
       console.log(price, amount);
-      
+
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
@@ -193,7 +226,7 @@ async function run() {
 
 
     // set Pro User
-    app.post('/proUserInfo', async (req, res) =>{
+    app.post('/proUserInfo', async (req, res) => {
       const proUser = req.body;
       console.log(proUser);
 
