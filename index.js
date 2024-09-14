@@ -47,6 +47,7 @@ async function run() {
 
     const surveyCollection = client.db("surveyApp").collection("allSurvey");
     const userCollection = client.db("surveyApp").collection("users");
+    const proUserserCollection = client.db("surveyApp").collection("proUser");
 
 
     // admin api
@@ -56,11 +57,11 @@ async function run() {
     })
 
 
-    app.put('/userRole/:id', async (req, res) => {
-      const { id } = req.params
+    app.put('/userRole/:email', async (req, res) => {
+      const { email } = req.params
       const updateRole = req.body;
-      console.log(id, updateRole.role);
-      const filter = { _id: new ObjectId(id) }
+      console.log(email, updateRole.role);
+      const filter = { email : email }
 
       const updateDoc = {
         $set: {
@@ -113,6 +114,8 @@ async function run() {
 
     app.get('/survey', async (req, res) => {
       const result = await surveyCollection.find().toArray()
+      console.log(process.env.STRIPE_SECRET_KEY);
+      
       res.send(result)
     })
 
@@ -174,8 +177,10 @@ async function run() {
     app.post('/create-payment-intent', async(req, res) =>{
       const {price} = req.body;
       const amount = parseInt(price * 100);
+      console.log(price, amount);
+      
 
-      const paymentIntent = await stripe.paymentIntent.create({
+      const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: 'usd',
         payment_method_types: ['card'],
@@ -184,6 +189,16 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret,
       })
+    })
+
+
+    // set Pro User
+    app.post('/proUserInfo', async (req, res) =>{
+      const proUser = req.body;
+      console.log(proUser);
+
+      const result = await proUserserCollection.insertOne(proUser);
+      res.send(result);
     })
 
 
