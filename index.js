@@ -206,6 +206,31 @@ async function run() {
     })
 
 
+    // comment survey
+    app.put('/comment/:id', async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based, so add 1
+      const day = String(today.getDate()).padStart(2, '0'); // Pad day with leading zero if needed
+
+      const formattedDate = `${year}/${month}/${day}`;
+      console.log(formattedDate); // Output: "2024/09/14"
+      data.commentDate = formattedDate;
+      console.log(id, data)
+
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+
+        $push: { 'comment': data }
+      }
+
+      const result = await surveyCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
+
+
     // payment intent
     app.post('/create-payment-intent', async (req, res) => {
       const { price } = req.body;
