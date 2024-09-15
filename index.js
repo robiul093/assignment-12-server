@@ -269,6 +269,13 @@ async function run() {
     })
 
 
+    // get all payment data
+    app.get('/allPayment', async (req, res) =>{
+      const result = await proUserserCollection.find().toArray();
+      res.send(result);
+    })
+
+
     // set Pro User
     app.post('/proUserInfo', async (req, res) => {
       const proUser = req.body;
