@@ -206,6 +206,25 @@ async function run() {
     })
 
 
+    // update survey status and feedback
+    app.put('/surveyStatus/:id', async (req, res) =>{
+      const id = req.params.id;
+      const {surveyStatus} = req.body;
+      const {feedback} = req.body;
+
+      console.log(id, surveyStatus, feedback);
+
+      const filter = {_id: new ObjectId(id)};
+      const updateDoc = {
+        
+        $set: { 'adminFeedback' : feedback, 'status' : surveyStatus }
+      }
+
+      const result = await surveyCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+
     // comment survey
     app.put('/comment/:id', async (req, res) => {
       const id = req.params.id;
