@@ -1,9 +1,12 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookiePaeser = require('cookie-parser');
 require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
+const cookieParser = require('cookie-parser');
 
 
 
@@ -22,12 +25,14 @@ const corsOption = {
 // middlewere
 app.use(cors(corsOption));
 app.use(express.json());
+app.use(cookieParser())
 
 
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const req = require('express/lib/request');
+// const cookieParser = require('cookie-parser');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.3nuinge.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -48,6 +53,26 @@ async function run() {
     const surveyCollection = client.db("surveyApp").collection("allSurvey");
     const userCollection = client.db("surveyApp").collection("users");
     const proUserserCollection = client.db("surveyApp").collection("proUser");
+
+
+
+    // jwt api
+    app.post('jwt', async (req, res) => {
+      const { user } = req.body;
+      console.log(user);
+
+      const token = jwt.sign(user, 'secret', { expiresIn: '1h' });
+
+
+      res.
+        cookie('token', token, {
+          httpOnly: true,
+          secure: false,
+        })
+      send(user)
+
+    })
+
 
 
     // admin api
@@ -206,18 +231,20 @@ async function run() {
     })
 
 
+
+
     // update survey status and feedback
-    app.put('/surveyStatus/:id', async (req, res) =>{
+    app.put('/surveyStatus/:id', async (req, res) => {
       const id = req.params.id;
-      const {surveyStatus} = req.body;
-      const {feedback} = req.body;
+      const { surveyStatus } = req.body;
+      const { feedback } = req.body;
 
       console.log(id, surveyStatus, feedback);
 
-      const filter = {_id: new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
       const updateDoc = {
-        
-        $set: { 'adminFeedback' : feedback, 'status' : surveyStatus }
+
+        $set: { 'adminFeedback': feedback, 'status': surveyStatus }
       }
 
       const result = await surveyCollection.updateOne(filter, updateDoc)
@@ -250,6 +277,40 @@ async function run() {
     })
 
 
+    // rating api
+    app.put('/rating/:id', async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      console.log(id, data)
+
+      const filter = { _id: new ObjectId(id) }
+
+      const survey = await surveyCollection.findOne(filter)
+
+      if (!survey) {
+        return res.status(404).send({ message: "Survey not found." });
+      }
+
+      const ratedBy = survey.rating || [];
+
+      const alreadyRated = ratedBy.some(report => report.email === data.email);
+
+      if (alreadyRated) {
+        return res.status(400).send({ message: "You have already reported this survey." });
+      }
+
+      const updateDoc = {
+
+        $push: { 'rating': data }
+      }
+
+      const result = await surveyCollection.updateOne(filter, updateDoc);
+      res.send(result);
+
+    })
+
+
+
     // payment intent
     app.post('/create-payment-intent', async (req, res) => {
       const { price } = req.body;
@@ -270,7 +331,7 @@ async function run() {
 
 
     // get all payment data
-    app.get('/allPayment', async (req, res) =>{
+    app.get('/allPayment', async (req, res) => {
       const result = await proUserserCollection.find().toArray();
       res.send(result);
     })
